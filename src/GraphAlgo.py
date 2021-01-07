@@ -195,7 +195,7 @@ class GraphAlgo(GraphAlgoInterface):
 
 if __name__ == '__main__':
     g = DiGraph()
-    g.add_node(0, (1, 1, 1))
+    g.add_node(0, (2,2,2))
     g.add_node(1, (2, 2, 2))
     g.add_node(2, (1, 1, 3))
     g.add_node(3, (1, 1, 4))
