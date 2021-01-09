@@ -5,6 +5,8 @@ class Node:
         self.__location = loc
         self.__ni_out = {}
         self.__ni_in = {}
+        self.d_time = 0
+        self.f_time = 0
 
     def add_neighbor_out(self, neighbor_id: int, weight: float) -> None:
         self.__ni_out[neighbor_id] = weight
@@ -26,6 +28,9 @@ class Node:
 
     def get_location(self) -> tuple:
         return self.__location
+
+    def set_location(self, location: tuple) -> None:
+        self.__location = location
 
     def __repr__(self):
         return str([self.get_key()])

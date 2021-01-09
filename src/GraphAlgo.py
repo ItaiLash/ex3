@@ -17,36 +17,21 @@ class GraphAlgo(GraphAlgoInterface):
     def get_graph(self) -> DiGraph:
         return self.graph
 
-    # def load_from_json(self, file_name: str) -> bool:
-    #     g = DiGraph()
-    #     with open(file_name, "r") as f:
-    #         graph_dict = json.load(f)
-    #         for k, v in graph_dict.items():
-    #             i = 0
-    #             args = []
-    #             for nodeK,nodeV in v.items():
-    #                 if i < 2:
-    #                     args.append(nodeV)
-    #                 i += 1
-    #             g.add_node(*args)
-    #         for k, v in graph_dict.items():
-    #             for dest, w in v.get("_Node__ni_out").items():
-    #                 g.add_edge(int(k), int(dest), w)
-    #     self.graph = g
-
     def load_from_json(self, file_name: str) -> bool:
         g = DiGraph()
         with open(file_name, "r") as f:
             graph_dict = json.load(f)
             for i in graph_dict.get("Nodes"):
                 if "pos" in i:
-                    pos = ()
-                    for d in i.get("pos"):
-                        pos.__add__(tuple(d))
-                    g.add_node(int(i.get("id")), pos)
+                    pos = []
+                    str = i.get("pos")
+                    arr = str.split(',')
+                    for j in arr:
+                        pos.append(float(j))
+                    g.add_node(int(i.get("id")), tuple(pos))
                 else:
-                    x = random.uniform(0, 10)
-                    y = random.uniform(0, 10)
+                    x = random.uniform(0, 100)
+                    y = random.uniform(0, 100)
                     g.add_node(int(i.get("id")), (x, y, 0))
             for i in graph_dict.get("Edges"):
                 g.add_edge(int(i.get("src")), int(i.get("dest")), float(i.get("w")))
@@ -134,24 +119,44 @@ class GraphAlgo(GraphAlgoInterface):
         Otherwise, they will be placed in a random but elegant manner.
         @return: None
         """
+        for node in self.graph.get_all_v().values():
+            if node.get_location() is None:
+                loc_x = random.uniform(0, 100)
+                loc_y = random.uniform(0, 100)
+                location = (loc_x, loc_y, 0)
+                node.set_location(location)
+            x, y, z = node.get_location()
+            plt.plot(x, y, markersize=30, marker='.', color='red')
+            plt.text(x, y, str(node.get_key()), color='black', fontsize=10)
+            for dest_id, w in self.graph.all_out_edges_of_node(node.get_key()).items():
+                dest = self.graph.get_node(dest_id)
+                if dest.get_location() is None:
+                    loc_x2 = random.uniform(0, 100)
+                    loc_y2 = random.uniform(0, 100)
+                    location = (loc_x2, loc_y2, 0)
+                    dest.set_location(location)
+                x2, y2, z2 = dest.get_location()
+                plt.annotate("", xy=(x, y), xytext=(x2, y2), arrowprops=dict(arrowstyle="<-"))
+                #mid_x = (x+x2)/2
+                #mid_y = (y+y2)/2
+                #plt.text(mid_x, mid_y, str(w)[0:4], color='black', fontsize=10)
+        plt.show()
 
 
-    def DFSUtil(self, g: DiGraph, n: int, visited: dict, l: list):
-        visited[n] = True
-        l.append(n)
-        # Recur for all the vertices adjacent to this vertex
-        for k, v in g.all_out_edges_of_node(n).items():
-            if not visited.get(k):
-                self.DFSUtil(g, k, visited, l)
-
-    def fillOrder(self, n, visited, stack):
-        # Mark the current node as visited
-        visited[n] = True
-        # Recur for all the vertices adjacent to this vertex
-        for k, v in self.graph.all_out_edges_of_node(n).items():
-            if not visited.get(k):
-                self.fillOrder(k, visited, stack)
-        stack = stack.append(n)
+    def dfs(self, g: DiGraph, n: int, visited: dict, stack: list, total=0):
+        local_stack = [n]  # create local_stack with starting vertex
+        while local_stack:  # while local_stack is not empty
+            v = local_stack[-1]  # peek top of local_stack
+            if visited[v]:  # if already seen
+                v = local_stack.pop()  # done with this node, pop it from local_stack
+                if visited[v] == 1:  # if GRAY, finish this node
+                    visited[v] = 2  # BLACK, done
+                    stack.append(v)
+            else:  # seen for first time
+                visited[v] = 1  # GRAY: discovered
+                for k in g.all_out_edges_of_node(v).keys():  # for all neighbor (v, w)
+                    if not visited[k]:  # if not seen
+                        local_stack.append(k)
 
     def Transpose(self):
         g = DiGraph()
@@ -167,12 +172,14 @@ class GraphAlgo(GraphAlgoInterface):
         stack = []
         visited = {}
         for k in self.graph.get_all_v():
-            visited[k] = False
+            visited[k] = 0
+
         # Fill vertices in stack according to their finishing
         # times
+        total = 0
         for i in visited:
             if not visited.get(i):
-                self.fillOrder(i, visited, stack)
+                self.dfs(self.graph, i, visited, stack, total)
 
             # Create a reversed graph
         g_transpose = self.Transpose()
@@ -180,7 +187,7 @@ class GraphAlgo(GraphAlgoInterface):
         # Mark all the vertices as not visited (For second DFS)
         visited = {}
         for k in self.graph.get_all_v():
-            visited[k] = False
+            visited[k] = 0
 
         # Now process all vertices in order defined by Stack
         the_list = []
@@ -188,42 +195,43 @@ class GraphAlgo(GraphAlgoInterface):
             scc_list = []
             n = stack.pop()
             if not visited.get(n):
-                self.DFSUtil(g_transpose, n, visited, scc_list)
+                self.dfs(g_transpose, n, visited, scc_list)
                 the_list.append(scc_list)
         return the_list
 
 
 if __name__ == '__main__':
     g = DiGraph()
-    g.add_node(0, (2,2,2))
-    g.add_node(1, (2, 2, 2))
-    g.add_node(2, (1, 1, 3))
-    g.add_node(3, (1, 1, 4))
-    g.add_node(4, (1, 1, 5))
-    g.add_edge(0, 1, 1.5)
-    g.add_edge(1, 2, 2.5)
-    g.add_edge(2, 0, 1)
-    g.add_edge(4, 0, 1.5)
-    g.add_edge(4, 3, 1.5)
+    # g.add_node(0, (1, 1, 1))
+    # g.add_node(1, (2, 2, 2))
+    # g.add_node(2, (1, 1, 3))
+    # g.add_node(3, (1, 1, 4))
+    # g.add_node(4, (1, 1, 5))
+    # g.add_edge(0, 1, 1.5)
+    # g.add_edge(1, 2, 2.5)
+    # g.add_edge(2, 0, 1)
+    # g.add_edge(4, 0, 1.5)
+    # g.add_edge(4, 3, 1.5)
 
-    g.add_node(1, (1, 2, 3))
-    g.add_edge(0, 2, 3)
-
-    ga = GraphAlgo()
-    ga.load_from_json('DiGraphTry.json')
+    #g.add_node(1, (1, 2, 3))
+    #g.add_edge(0, 2, 3)
+    #
+    ga = GraphAlgo(g)
+    # ga.load_from_json('DiGraphTry.json')
 
     #ga.load_from_json('../data/T0.json')
-    #ga.load_from_json('../src/DiGraph.json')
+    ga.load_from_json('../data/G_10_80_0.json')
     #ga.save_to_json('DiGraphTry.json')
     #ga.load_from_json('DiGraph.json')
-    print(str(ga.graph))
-    print(ga.get_graph().get_all_v())
-    print(ga.shortest_path(0, 0))
-    print(ga.shortest_path(0, 2))
-    ga.graph.add_node(10)
-    print(str(ga.graph))
+    #print(str(ga.graph))
+    #print(ga.get_graph().get_all_v())
+    #print(ga.shortest_path(0, 0))
+    #print(ga.shortest_path(0, 100))
+    #ga.graph.add_node(10)
+    #print(str(ga.graph))
 
-    print('\n', str(ga.graph))
+    #print('\n', str(ga.graph))
 
     print(ga.connected_components())
     print(ga.connected_component(0))
+    ga.plot_graph()

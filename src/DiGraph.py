@@ -48,6 +48,11 @@ class DiGraph(GraphInterface):
         DiGraph.mc += 1
         return True
 
+    def get_node(self, node_id: int) -> Node:
+        if node_id not in self.nodes.keys():
+            raise Exception('Node {} is not exist in the graph'.format(node_id))
+        return self.nodes[node_id]
+
     def remove_node(self, node_id: int) -> bool:
         if node_id not in self.nodes.keys():
             return False
