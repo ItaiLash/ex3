@@ -4,8 +4,7 @@ from GraphAlgoInterface import GraphAlgoInterface
 from DiGraph import DiGraph
 from typing import List
 import json
-import Node
-import networkx as nx
+
 import matplotlib.pyplot as plt
 
 
@@ -18,24 +17,25 @@ class GraphAlgo(GraphAlgoInterface):
         return self.graph
 
     def load_from_json(self, file_name: str) -> bool:
-        g = DiGraph()
+        gra = DiGraph()
         with open(file_name, "r") as f:
             graph_dict = json.load(f)
             for i in graph_dict.get("Nodes"):
-                if "pos" in i:
+                if "pos" in i and len(i.get("pos")) > 0:
                     pos = []
-                    str = i.get("pos")
-                    arr = str.split(',')
+                    pos_as_str = i.get("pos")
+                    arr = pos_as_str.split(',')
                     for j in arr:
                         pos.append(float(j))
-                    g.add_node(int(i.get("id")), tuple(pos))
+                    gra.add_node(int(i.get("id")), tuple(pos))
                 else:
                     x = random.uniform(0, 100)
                     y = random.uniform(0, 100)
-                    g.add_node(int(i.get("id")), (x, y, 0))
+                    gra.add_node(int(i.get("id")), (x, y, 0))
             for i in graph_dict.get("Edges"):
-                g.add_edge(int(i.get("src")), int(i.get("dest")), float(i.get("w")))
-        self.graph = g
+                gra.add_edge(int(i.get("src")), int(i.get("dest")), float(i.get("w")))
+        self.graph = gra
+        return True
 
     def save_to_json(self, file_name: str) -> bool:
         try:
@@ -43,6 +43,8 @@ class GraphAlgo(GraphAlgoInterface):
                 json.dump(self.graph, default=lambda o: o.as_dict(), indent=4, fp=f)
         except IOError as e:
             print(e)
+            return False
+        return True
 
     def shortest_path(self, id1: int, id2: int) -> (float, list):
         if self.graph.nodes.get(id1) is None:
@@ -100,8 +102,8 @@ class GraphAlgo(GraphAlgoInterface):
         """
         if id1 not in self.graph.get_all_v().keys():
             raise Exception('Node {} is not exist in the graph'.format(id1))
-        l = self.SCC
-        for i in l:
+        scc = self.SCC
+        for i in scc:
             if id1 in i:
                 return i
 
@@ -137,13 +139,12 @@ class GraphAlgo(GraphAlgoInterface):
                     dest.set_location(location)
                 x2, y2, z2 = dest.get_location()
                 plt.annotate("", xy=(x, y), xytext=(x2, y2), arrowprops=dict(arrowstyle="<-"))
-                #mid_x = (x+x2)/2
-                #mid_y = (y+y2)/2
-                #plt.text(mid_x, mid_y, str(w)[0:4], color='black', fontsize=10)
+                # mid_x = (x+x2)/2
+                # mid_y = (y+y2)/2
+                # plt.text(mid_x, mid_y, str(w)[0:4], color='black', fontsize=10)
         plt.show()
 
-
-    def dfs(self, g: DiGraph, n: int, visited: dict, stack: list, total=0):
+    def dfs(self, gra: DiGraph, n: int, visited: dict, stack: list):
         local_stack = [n]  # create local_stack with starting vertex
         while local_stack:  # while local_stack is not empty
             v = local_stack[-1]  # peek top of local_stack
@@ -154,18 +155,18 @@ class GraphAlgo(GraphAlgoInterface):
                     stack.append(v)
             else:  # seen for first time
                 visited[v] = 1  # GRAY: discovered
-                for k in g.all_out_edges_of_node(v).keys():  # for all neighbor (v, w)
+                for k in gra.all_out_edges_of_node(v).keys():  # for all neighbor (v, w)
                     if not visited[k]:  # if not seen
                         local_stack.append(k)
 
-    def Transpose(self):
-        g = DiGraph()
+    def transpose(self):
+        gra = DiGraph()
         for k, v in self.graph.get_all_v().items():
-            g.add_node(k, v.get_location())
-        for k, v in g.get_all_v().items():
+            gra.add_node(k, v.get_location())
+        for k, v in gra.get_all_v().items():
             for dest, w in self.graph.all_in_edges_of_node(k).items():
-                g.add_edge(k, dest, w)
-        return g
+                gra.add_edge(k, dest, w)
+        return gra
 
     @property
     def SCC(self):
@@ -176,13 +177,12 @@ class GraphAlgo(GraphAlgoInterface):
 
         # Fill vertices in stack according to their finishing
         # times
-        total = 0
         for i in visited:
             if not visited.get(i):
-                self.dfs(self.graph, i, visited, stack, total)
+                self.dfs(self.graph, i, visited, stack)
 
             # Create a reversed graph
-        g_transpose = self.Transpose()
+        g_transpose = self.transpose()
 
         # Mark all the vertices as not visited (For second DFS)
         visited = {}
@@ -199,6 +199,13 @@ class GraphAlgo(GraphAlgoInterface):
                 the_list.append(scc_list)
         return the_list
 
+    def __eq__(self, other):
+        if self is other:
+            return True
+        if other is None or self.__class__ is not other.__class__:
+            return False
+        return self.graph.__eq__(other.graph)
+
 
 if __name__ == '__main__':
     g = DiGraph()
@@ -213,25 +220,25 @@ if __name__ == '__main__':
     # g.add_edge(4, 0, 1.5)
     # g.add_edge(4, 3, 1.5)
 
-    #g.add_node(1, (1, 2, 3))
-    #g.add_edge(0, 2, 3)
+    # g.add_node(1, (1, 2, 3))
+    # g.add_edge(0, 2, 3)
     #
     ga = GraphAlgo(g)
     # ga.load_from_json('DiGraphTry.json')
 
-    #ga.load_from_json('../data/T0.json')
-    ga.load_from_json('../data/G_10_80_0.json')
-    #ga.save_to_json('DiGraphTry.json')
-    #ga.load_from_json('DiGraph.json')
-    #print(str(ga.graph))
-    #print(ga.get_graph().get_all_v())
-    #print(ga.shortest_path(0, 0))
-    #print(ga.shortest_path(0, 100))
-    #ga.graph.add_node(10)
-    #print(str(ga.graph))
+    # ga.load_from_json('../data/T0.json')
+    ga.load_from_json('../data/G_30000_240000_2.json')
+    # ga.save_to_json('DiGraphTry.json')
+    # ga.load_from_json('DiGraph.json')
+    # print(str(ga.graph))
+    # print(ga.get_graph().get_all_v())
+    # print(ga.shortest_path(0, 0))
+    print(ga.shortest_path(0, 100))
+    # ga.graph.add_node(10)
+    # print(str(ga.graph))
 
-    #print('\n', str(ga.graph))
+    # print('\n', str(ga.graph))
 
     print(ga.connected_components())
     print(ga.connected_component(0))
-    ga.plot_graph()
+    # ga.plot_graph()

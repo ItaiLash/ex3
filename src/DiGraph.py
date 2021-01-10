@@ -3,17 +3,17 @@ from Node import Node
 
 
 class DiGraph(GraphInterface):
-    num_of_edges = 0
-    mc = 0
 
     def __init__(self, **kwargs):
         self.nodes = dict()
+        self.__mc = 0
+        self.__num_of_edges = 0
 
     def v_size(self) -> int:
         return len(self.nodes.keys())
 
     def e_size(self) -> int:
-        return DiGraph.num_of_edges
+        return self.__num_of_edges
 
     def get_all_v(self) -> dict:
         return self.nodes
@@ -29,15 +29,17 @@ class DiGraph(GraphInterface):
         return self.nodes.get(id1).get_connections_out()
 
     def get_mc(self) -> int:
-        return DiGraph.mc
+        return self.__mc
 
     def add_edge(self, id1: int, id2: int, weight: float) -> bool:
         if self.nodes.get(id1) is None or self.nodes.get(id2) is None:
             return False
+        if id2  in self.get_node(id1).get_connections_out().keys():
+            return False
         self.nodes.get(id1).add_neighbor_out(id2, weight)
         self.nodes.get(id2).add_neighbor_in(id1, weight)
-        DiGraph.mc += 1
-        DiGraph.num_of_edges +=1
+        self.__mc += 1
+        self.__num_of_edges += 1
         return True
 
     def add_node(self, node_id: int, pos: tuple = None) -> bool:
@@ -45,7 +47,7 @@ class DiGraph(GraphInterface):
             return False
         n = Node(node_id, pos)
         self.nodes[node_id] = n
-        DiGraph.mc += 1
+        self.__mc += 1
         return True
 
     def get_node(self, node_id: int) -> Node:
@@ -66,7 +68,7 @@ class DiGraph(GraphInterface):
             keys += (x,)
         [self.remove_edge(x, node_id) for x in keys]
         del self.nodes[node_id]
-        DiGraph.mc += 1
+        self.__mc += 1
         return True
 
     def remove_edge(self, node_id1: int, node_id2: int) -> bool:
@@ -76,8 +78,8 @@ class DiGraph(GraphInterface):
             return False
         del self.nodes.get(node_id1).get_connections_out()[node_id2]
         del self.nodes.get(node_id2).get_connections_in()[node_id1]
-        DiGraph.mc += 1
-        DiGraph.num_of_edges -= 1
+        self.__mc += 1
+        self.__num_of_edges -= 1
         return True
 
     def __str__(self) -> str:
@@ -99,6 +101,14 @@ class DiGraph(GraphInterface):
 
         return m_dict
 
+    def __eq__(self, other):
+        if self is other:
+            return True
+        if other is None or self.__class__ is not other.__class__:
+            return False
+        return self.nodes.__eq__(other.nodes) and self.e_size() == other.e_size()
+
+
 
 if __name__ == '__main__':
 
@@ -112,6 +122,22 @@ if __name__ == '__main__':
     g.add_edge(1,2,2.5)
     g.add_edge(4,0,1.5)
     g.add_node(1,(1,2,3))
+    print('g mc', g.get_mc())
+
+    g1 = DiGraph()
+    g1.add_node(3, (2, 1, 4))
+    g1.add_node(4, (1, 1, 5))
+    g1.add_node(0, (1, 1, 1))
+    g1.add_node(1, (2, 2, 2))
+    g1.add_node(2, (1, 1, 3))
+    g1.add_edge(4, 0, 1.5)
+    g1.add_node(1, (1, 2, 3))
+    g1.add_edge(0, 1, 4.5)
+    g1.add_edge(1, 2, 2.5)
+    print('g1 mc', g1.get_mc())
+
+    print('eq:', g.__eq__(g1))
+
     print(g.get_all_v())
     print(g.__str__())
     print(g.e_size())
