@@ -179,21 +179,43 @@ class GraphAlgo(GraphAlgoInterface):
         return distances[dest], path
 
     def dfs(self, gra: DiGraph, n: int, visited: dict, stack: list):
-        local_stack = [n]  # create local_stack with starting vertex
-        while local_stack:  # while local_stack is not empty
-            v = local_stack[-1]  # peek top of local_stack
-            if visited[v]:  # if already seen
-                v = local_stack.pop()  # done with this node, pop it from local_stack
-                if visited[v] == 1:  # if GRAY, finish this node
-                    visited[v] = 2  # BLACK, done
+        """
+        This method based on DFS algorithm.
+        Depth-first search (DFS) is an algorithm for traversing or searching graph data structures.
+        The algorithm starts at the root node and explores as far as possible along each branch before backtracking.
+        First, the method create local stack and insert the root node inside it.
+        While local_stack is not empty:
+        peek the node that in the top of the local stack.
+        If his status is 0, meaning it discover for the first time, update his status to 1.
+        Visit each one of this node neighbors and if the neighbor status is 0, insert it into the local stack.
+        If his status is 1 or 2, pop this node from the local stack and update his status to 2,
+        and insert this node to the stack.
+        At the end, the stack contain all the nodes discover from the "root" node (n).
+        :param gra: a DiGraph
+        :param n: the node_id from which the method begins the search
+        :param visited: a dictionary represent the node status, 0, 1 or 2.
+        :param stack: a list that will be updated during the method.
+        """
+        local_stack = [n]
+        while local_stack:
+            v = local_stack[-1]
+            if visited[v]:
+                v = local_stack.pop()
+                if visited[v] == 1:
+                    visited[v] = 2
                     stack.append(v)
-            else:  # seen for first time
-                visited[v] = 1  # GRAY: discovered
-                for k in gra.all_out_edges_of_node(v).keys():  # for all neighbor (v, w)
-                    if not visited[k]:  # if not seen
+            else:
+                visited[v] = 1
+                for k in gra.all_out_edges_of_node(v).keys():
+                    if not visited[k]:
                         local_stack.append(k)
 
     def transpose(self):
+        """
+        Return transpose graph.
+        Meaning each edge in the original graph transpose (src-->dest)-->(src<--dest).
+        :return:
+        """
         gra = DiGraph()
         for k, v in self.graph.get_all_v().items():
             gra.add_node(k, v.get_location())
@@ -204,6 +226,15 @@ class GraphAlgo(GraphAlgoInterface):
 
     @property
     def SCC(self):
+        """
+        This method based on Kosaraju's algorithm in iterative way.
+        First, call dfs on the original graph to fill the stack in order of each node finish time.
+        Then compute this graph transpose.
+        Last, call dfs on the transpose graph, but in the main loop, consider nodes in order of decreasing
+        finishing time(as computed in the first dfs).
+        In the last call for the dfs it return a list of scc.
+        :return: a List of lists represents all the strongly connected component in the graph.
+        """
         stack = []
         visited = {}
         for k in self.graph.get_all_v():
