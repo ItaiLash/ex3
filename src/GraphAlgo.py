@@ -4,19 +4,31 @@ from GraphAlgoInterface import GraphAlgoInterface
 from DiGraph import DiGraph
 from typing import List
 import json
-
 import matplotlib.pyplot as plt
 
 
 class GraphAlgo(GraphAlgoInterface):
+    """This class implement GraphAlgoInterface abstract class that represents an interface of a graph."""
 
     def __init__(self, digraph: DiGraph = None):
+        """
+        Each GraphAlgo contain a DiGraph on which the algorithm works on.
+        :param digraph:
+        """
         self.graph = digraph
 
     def get_graph(self) -> DiGraph:
+        """
+        :return: the directed graph on which the algorithm works on.
+        """
         return self.graph
 
     def load_from_json(self, file_name: str) -> bool:
+        """
+        Loads a graph from a json file.
+        @param file_name: The path to the json file
+        @returns True if the loading was successful, False o.w.
+        """
         gra = DiGraph()
         with open(file_name, "r") as f:
             graph_dict = json.load(f)
@@ -38,6 +50,11 @@ class GraphAlgo(GraphAlgoInterface):
         return True
 
     def save_to_json(self, file_name: str) -> bool:
+        """
+        Saves the graph in JSON format to a file
+        @param file_name: The path to the out file
+        @return: True if the save was successful, False o.w.
+        """
         try:
             with open(file_name, "w") as f:
                 json.dump(self.graph, default=lambda o: o.as_dict(), indent=4, fp=f)
@@ -47,6 +64,12 @@ class GraphAlgo(GraphAlgoInterface):
         return True
 
     def shortest_path(self, id1: int, id2: int) -> (float, list):
+        """
+        Returns the shortest path from node id1 to node id2 using Dijkstra's Algorithm.
+        @param id1: The start node id
+        @param id2: The end node id
+        @return: The distance of the path, the path as a list
+        """
         if self.graph.nodes.get(id1) is None:
             raise Exception('Node {} is not exist in the graph'.format(id1))
         if self.graph.nodes.get(id2) is None:
@@ -54,45 +77,6 @@ class GraphAlgo(GraphAlgoInterface):
         if id1 == id2:
             return 0, [id1]
         return self.dijkstra(id1, id2)
-
-    def dijkstra(self, src, dest) -> (float, list):
-        distances = {node: inf for node in self.graph.nodes.keys()}
-        previous_nodes = {node: None for node in self.graph.nodes.keys()}
-        distances[src] = 0
-        # vertices = self.vertices.copy()
-        nodes = [x for x in self.graph.nodes.keys()]
-        while nodes:
-            # 3. Select the unvisited node with the smallest distance,
-            # it's current node now.
-            current_node = min(nodes, key=lambda vertex: distances[vertex])
-            # 6. Stop, if the smallest distance
-            # among the unvisited nodes is infinity.
-            if distances[current_node] == inf:
-                break
-
-            # 4. Find unvisited neighbors for the current node
-            # and calculate their distances through the current node.
-            for neighbour, w in self.graph.nodes.get(current_node).get_connections_out().items():
-                alternative_route = distances[current_node] + w
-
-                # Compare the newly calculated distance to the assigned
-                # and save the smaller one.
-                if alternative_route < distances[neighbour]:
-                    distances[neighbour] = alternative_route
-                    previous_nodes[neighbour] = current_node
-
-            # 5. Mark the current node as visited
-            # and remove it from the unvisited set.
-            nodes.remove(current_node)
-
-        path, current_node = [], dest
-        while previous_nodes[current_node] is not None:
-            path.append(current_node)
-            current_node = previous_nodes[current_node]
-        if path:
-            path.append(current_node)
-        path.reverse()
-        return distances[dest], path
 
     def connected_component(self, id1: int) -> list:
         """
@@ -110,7 +94,7 @@ class GraphAlgo(GraphAlgoInterface):
     def connected_components(self) -> List[list]:
         """
         Finds all the Strongly Connected Component(SCC) in the graph.
-        @return: The list all SCC
+        @return: a list all SCCs
         """
         return self.SCC
 
@@ -119,7 +103,6 @@ class GraphAlgo(GraphAlgoInterface):
         Plots the graph.
         If the nodes have a position, the nodes will be placed there.
         Otherwise, they will be placed in a random but elegant manner.
-        @return: None
         """
         for node in self.graph.get_all_v().values():
             if node.get_location() is None:
@@ -143,6 +126,57 @@ class GraphAlgo(GraphAlgoInterface):
                 # mid_y = (y+y2)/2
                 # plt.text(mid_x, mid_y, str(w)[0:4], color='black', fontsize=10)
         plt.show()
+
+    def dijkstra(self, src, dest) -> (float, list):
+        """
+        This method based on Dijkstra's algorithm.
+        Dijkstra's algorithm is an algorithm for finding the shortest paths between nodes in a graph.
+        In other words it finds the shortest paths between the source node and the destination node.
+        The method stored a distance dictionary represent each node weight, in the beginning initialized to infinity.
+        In each step the method update his current distance from the source node.
+        In addition ot stored a dictionary represent each node "father", meaning the node through which we
+        discovered this node.
+        Update the source node weight to be 0.
+        Pop the node with the minimum weight from the distance dictionary.
+        Visit each one of this nodes neighbors:
+        Check if his current weight is more then the distance between the node and the source node,
+        if so, update his weight and updates his "father" to be the node's id from which he came to.
+        Delete the current node from the dictionary.
+        After going through all the neighbors of the node,
+        Repeat these steps until the distance dictionary is empty or when the weight of the nodes remaining
+        in the dictionary is infinity.
+        If the dest node weight is infinity it means there is no path between src node and dest node,
+        return infinity and empty list.
+        Otherwise returns the weight of the dest node that represent the distance between the two nodes,
+        return the path between them and the distance.
+        Complexity: O((|V|+|E|)log|V|), |V|=number of nodes, |E|=number of edges.
+        :param: src  - the source node_info
+        :param: dest - the destination node_info
+        :return: the shortest path between the two nodes and the path between them, and infinity if there is no path like this.
+        """
+        distances = {node: inf for node in self.graph.nodes.keys()}
+        previous_nodes = {node: None for node in self.graph.nodes.keys()}
+        distances[src] = 0
+        nodes = [x for x in self.graph.nodes.keys()]
+        while nodes:
+            current_node = min(nodes, key=lambda vertex: distances[vertex])
+            if distances[current_node] == inf:
+                break
+            for neighbour, w in self.graph.nodes.get(current_node).get_connections_out().items():
+                alternative_route = distances[current_node] + w
+                if alternative_route < distances[neighbour]:
+                    distances[neighbour] = alternative_route
+                    previous_nodes[neighbour] = current_node
+            nodes.remove(current_node)
+
+        path, current_node = [], dest
+        while previous_nodes[current_node] is not None:
+            path.append(current_node)
+            current_node = previous_nodes[current_node]
+        if path:
+            path.append(current_node)
+        path.reverse()
+        return distances[dest], path
 
     def dfs(self, gra: DiGraph, n: int, visited: dict, stack: list):
         local_stack = [n]  # create local_stack with starting vertex
@@ -206,39 +240,3 @@ class GraphAlgo(GraphAlgoInterface):
             return False
         return self.graph.__eq__(other.graph)
 
-
-if __name__ == '__main__':
-    g = DiGraph()
-    # g.add_node(0, (1, 1, 1))
-    # g.add_node(1, (2, 2, 2))
-    # g.add_node(2, (1, 1, 3))
-    # g.add_node(3, (1, 1, 4))
-    # g.add_node(4, (1, 1, 5))
-    # g.add_edge(0, 1, 1.5)
-    # g.add_edge(1, 2, 2.5)
-    # g.add_edge(2, 0, 1)
-    # g.add_edge(4, 0, 1.5)
-    # g.add_edge(4, 3, 1.5)
-
-    # g.add_node(1, (1, 2, 3))
-    # g.add_edge(0, 2, 3)
-    #
-    ga = GraphAlgo(g)
-    # ga.load_from_json('DiGraphTry.json')
-
-    # ga.load_from_json('../data/T0.json')
-    ga.load_from_json('../data/G_30000_240000_2.json')
-    # ga.save_to_json('DiGraphTry.json')
-    # ga.load_from_json('DiGraph.json')
-    # print(str(ga.graph))
-    # print(ga.get_graph().get_all_v())
-    # print(ga.shortest_path(0, 0))
-    print(ga.shortest_path(0, 100))
-    # ga.graph.add_node(10)
-    # print(str(ga.graph))
-
-    # print('\n', str(ga.graph))
-
-    print(ga.connected_components())
-    print(ga.connected_component(0))
-    # ga.plot_graph()
