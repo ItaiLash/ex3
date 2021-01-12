@@ -196,7 +196,7 @@ The output will be:
 ## External info:
 - More about graph : https://en.wikipedia.org/wiki/Directed_graph
 - More about Dijkstra's algorithm : https://en.wikipedia.org/wiki/Dijkstra%27s_algorithm
-- More about SCC algorithm : https://en.wikipedia.org/wiki/Strongly_connected_component#:~:text=7%20External%20links-,Definitions,second%20vertex%20to%20the%20first
+- More about SCC algorithm : https://www.geeksforgeeks.org/strongly-connected-components
 - More about DFS algorithm :https://en.wikipedia.org/wiki/Depth-first_search
-- More about matplotlib : https://matplotlib.org/
-- More about networkx : https://networkx.org/
+- More about matplotlib : https://matplotlib.org
+- More about networkx : https://networkx.org
