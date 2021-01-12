@@ -81,6 +81,8 @@ class DiGraph(GraphInterface):
             return False
         if weight < 0:
             raise Exception('Edge weight must be positive')
+        if id1 == id2:
+            return False
         self.nodes.get(id1).add_neighbor_out(id2, weight)
         self.nodes.get(id2).add_neighbor_in(id1, weight)
         self.__mc += 1
@@ -152,7 +154,6 @@ class DiGraph(GraphInterface):
         if node_id not in self.nodes.keys():
             raise Exception('Node {} is not exist in the graph'.format(node_id))
         return self.nodes[node_id]
-
 
     def as_dict(self):
         """

@@ -31,7 +31,7 @@ class Test(TestCase):
 
     def test_v_size(self):
         self.assertEqual(7, self.graph.v_size())
-        #add new node
+        # add new node
         self.assertTrue(self.graph.add_node(7))
         self.assertEqual(8, self.graph.v_size())
         # add existing node

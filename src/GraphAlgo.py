@@ -1,3 +1,4 @@
+import heapq
 import random
 from numpy import inf
 from GraphAlgoInterface import GraphAlgoInterface
@@ -86,17 +87,14 @@ class GraphAlgo(GraphAlgoInterface):
         """
         if id1 not in self.graph.get_all_v().keys():
             raise Exception('Node {} is not exist in the graph'.format(id1))
-        scc = self.SCC
-        for i in scc:
-            if id1 in i:
-                return i
+        return self.SCC(id1)
 
     def connected_components(self) -> List[list]:
         """
         Finds all the Strongly Connected Component(SCC) in the graph.
         @return: a list all SCCs
         """
-        return self.SCC
+        return self.SCC()
 
     def plot_graph(self) -> None:
         """
@@ -134,17 +132,16 @@ class GraphAlgo(GraphAlgoInterface):
         In other words it finds the shortest paths between the source node and the destination node.
         The method stored a distance dictionary represent each node weight, in the beginning initialized to infinity.
         In each step the method update his current distance from the source node.
-        In addition ot stored a dictionary represent each node "father", meaning the node through which we
+        In addition it stored a dictionary represent each node "father", meaning the node through which we
         discovered this node.
-        Update the source node weight to be 0.
-        Pop the node with the minimum weight from the distance dictionary.
+        Update the source node weight to be 0 and push him into a queue.
+        Pop the node with the minimum weight from the queue.
         Visit each one of this nodes neighbors:
         Check if his current weight is more then the distance between the node and the source node,
         if so, update his weight and updates his "father" to be the node's id from which he came to.
-        Delete the current node from the dictionary.
         After going through all the neighbors of the node,
-        Repeat these steps until the distance dictionary is empty or when the weight of the nodes remaining
-        in the dictionary is infinity.
+        If the current node that pop out from the queue is the destination node we finish.
+        Otherwise repeat these steps until the queue is empty.
         If the dest node weight is infinity it means there is no path between src node and dest node,
         return infinity and empty list.
         Otherwise returns the weight of the dest node that represent the distance between the two nodes,
@@ -152,14 +149,16 @@ class GraphAlgo(GraphAlgoInterface):
         Complexity: O((|V|+|E|)log|V|), |V|=number of nodes, |E|=number of edges.
         :param: src  - the source node_info
         :param: dest - the destination node_info
-        :return: the shortest path between the two nodes and the path between them, and infinity if there is no path like this.
+        :return: the shortest path between the two nodes and the path between them,
+        and infinity if there is no path like this.
         """
         distances = {node: inf for node in self.graph.nodes.keys()}
-        previous_nodes = {node: None for node in self.graph.nodes.keys()}
+        previous_nodes = {src: -1}
         distances[src] = 0
-        nodes = [x for x in self.graph.nodes.keys()]
-        while nodes:
-            current_node = min(nodes, key=lambda vertex: distances[vertex])
+        queue = []
+        heapq.heappush(queue, (0, src))
+        while queue:
+            current_node = heapq.heappop(queue)[1]
             if distances[current_node] == inf:
                 break
             for neighbour, w in self.graph.nodes.get(current_node).get_connections_out().items():
@@ -167,15 +166,17 @@ class GraphAlgo(GraphAlgoInterface):
                 if alternative_route < distances[neighbour]:
                     distances[neighbour] = alternative_route
                     previous_nodes[neighbour] = current_node
-            nodes.remove(current_node)
+                    heapq.heappush(queue, (distances[neighbour], neighbour))
+                if current_node == dest:
+                    break
 
         path, current_node = [], dest
-        while previous_nodes[current_node] is not None:
-            path.append(current_node)
+        if distances[dest] == inf:
+            return inf, []
+        while current_node != -1:
+            path.insert(0, current_node)
             current_node = previous_nodes[current_node]
-        if path:
-            path.append(current_node)
-        path.reverse()
+
         return distances[dest], path
 
     def dfs(self, gra: DiGraph, n: int, visited: dict, stack: list):
@@ -224,8 +225,7 @@ class GraphAlgo(GraphAlgoInterface):
                 gra.add_edge(k, dest, w)
         return gra
 
-    @property
-    def SCC(self):
+    def SCC(self, key=None):
         """
         This method based on Kosaraju's algorithm in iterative way.
         First, call dfs on the original graph to fill the stack in order of each node finish time.
@@ -239,22 +239,16 @@ class GraphAlgo(GraphAlgoInterface):
         visited = {}
         for k in self.graph.get_all_v():
             visited[k] = 0
-
-        # Fill vertices in stack according to their finishing
-        # times
         for i in visited:
             if not visited.get(i):
                 self.dfs(self.graph, i, visited, stack)
 
-            # Create a reversed graph
         g_transpose = self.transpose()
 
-        # Mark all the vertices as not visited (For second DFS)
         visited = {}
-        for k in self.graph.get_all_v():
+        for k in g_transpose.get_all_v():
             visited[k] = 0
 
-        # Now process all vertices in order defined by Stack
         the_list = []
         while stack:
             scc_list = []
@@ -262,6 +256,8 @@ class GraphAlgo(GraphAlgoInterface):
             if not visited.get(n):
                 self.dfs(g_transpose, n, visited, scc_list)
                 the_list.append(scc_list)
+                if key is not None and key in scc_list:
+                    return scc_list
         return the_list
 
     def __eq__(self, other):
@@ -270,4 +266,3 @@ class GraphAlgo(GraphAlgoInterface):
         if other is None or self.__class__ is not other.__class__:
             return False
         return self.graph.__eq__(other.graph)
-

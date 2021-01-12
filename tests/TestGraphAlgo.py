@@ -1,4 +1,3 @@
-import random
 from unittest import TestCase
 
 from src.DiGraph import DiGraph
@@ -44,13 +43,13 @@ class TestGraphAlgo(TestCase):
         for i in range(0, 10):
             for j in range(10):
                 if j in range(3):
-                    self.assertEqual([2, 1, 0], self.ga.connected_component(j))
+                    self.assertEqual([0, 1, 2], sorted(self.ga.connected_component(j)))
                 if j in range(3, 5):
-                    self.assertEqual([4, 3], self.ga.connected_component(j))
+                    self.assertEqual([3, 4], sorted(self.ga.connected_component(j)))
                 if j in range(5, 7):
                     self.assertEqual([j], self.ga.connected_component(j))
                 if j in range(8, 11):
-                    self.assertEqual([8, 9, 7], self.ga.connected_component(j))
+                    self.assertEqual([7, 8, 9], sorted(self.ga.connected_component(j)))
 
     def test_connected_components(self):
         self.ga.graph = graph_2
@@ -118,5 +117,3 @@ graph_3.add_edge(7, 8, 1)
 graph_3.add_edge(8, 9, 1)
 graph_3.add_edge(9, 7, 1)
 graph_3.add_edge(9, 8, 1)
-
-
