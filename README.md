@@ -36,7 +36,7 @@ Each node contain dew fields:
 | `get_location()` | Return this node location as a 3DPoint (x, y, z) |
 | `set_location()` | Allows to add location to this node |
 | `as_dict_node()` | Return the node as dictionary {"pos": "x", "y", "z", "id": key} |
-| `as_dict_edge()` | Return the edge as dictionary {"src": src node_id, "w": edge weight, "dest": dest node_id} |
+| `as_dict_edge()` | Return the edge as dictionary {"src": node_id, "w": edge weight, "dest": node_id} |
 
 
 
